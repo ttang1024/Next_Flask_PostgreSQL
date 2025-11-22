@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { ShoppingCart, Search, User, Menu, Heart, ChevronRight, Star, Plus, Minus } from 'lucide-react';
 import { productsAPI, categoriesAPI } from '@/lib/api';
+import { useRouter } from 'next/navigation';
+import WishlistSidebar from '@/components/WishlistSidebar';
 
 interface Product {
   id: number;
@@ -29,8 +31,10 @@ export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [showCart, setShowCart] = useState(false);
+  const [showWishlist, setShowWishlist] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   // Fetch categories
   useEffect(() => {
@@ -123,10 +127,9 @@ export default function HomePage() {
                 <Search className="absolute left-3 top-2.5 w-5 h-5 text-gray-500" />
               </div>
             </div>
-
             <div className="flex items-center gap-6">
-              <User className="w-6 h-6 cursor-pointer hover:opacity-80" />
-              <Heart className="w-6 h-6 cursor-pointer hover:opacity-80" />
+              <User className="w-6 h-6 cursor-pointer hover:opacity-80" onClick={() => router.push('/profile')} />
+              <Heart className="w-6 h-6 cursor-pointer hover:opacity-80" onClick={() => setShowWishlist(!showWishlist)} />
               <div className="relative cursor-pointer" onClick={() => setShowCart(!showCart)}>
                 <ShoppingCart className="w-6 h-6 hover:opacity-80" />
                 {cartCount > 0 && (
@@ -243,6 +246,7 @@ export default function HomePage() {
           </>
         )}
       </main>
+      <WishlistSidebar isOpen={showWishlist} onClose={() => setShowWishlist(false)} />
 
       {/* Shopping Cart Sidebar */}
       {showCart && (

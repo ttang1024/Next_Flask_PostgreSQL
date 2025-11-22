@@ -1,0 +1,102 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { Heart, X, Trash2, Star, ShoppingBag } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { wishlistAPI } from '@/lib/api';
+
+export default function WishlistSidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+  const { user } = useAuth();
+  const [wishlist, setWishlist] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (isOpen && user) {
+      fetchWishlist();
+    }
+  }, [isOpen, user]);
+
+  const fetchWishlist = async () => {
+    setLoading(true);
+    try {
+      const data = await wishlistAPI.getWishlist(user.id);
+      setWishlist(data);
+    } catch (error) {
+      console.error('Error fetching wishlist:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const removeFromWishlist = async (productId: number) => {
+    try {
+      await wishlistAPI.removeFromWishlist(user.id, productId);
+      setWishlist(wishlist.filter(item => item.product_id !== productId));
+    } catch (error) {
+      console.error('Error removing from wishlist:', error);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50" onClick={onClose}>
+      <div
+        className="absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-2xl overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <Heart className="w-6 h-6 text-pink-500" />
+              <h2 className="text-2xl font-bold text-gray-800">My Wishlist</h2>
+            </div>
+            <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+
+          {loading ? (
+            <div className="flex justify-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+            </div>
+          ) : wishlist.length === 0 ? (
+            <div className="text-center py-12">
+              <Heart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500">Your wishlist is empty</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {wishlist.map(item => (
+                <div key={item.id} className="flex gap-4 p-4 bg-gray-50 rounded-lg">
+                  <div className="w-20 h-20 bg-white rounded-lg flex items-center justify-center text-4xl flex-shrink-0">
+                    {item.product.image_url}
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-gray-800 mb-1">{item.product.name}</h4>
+                    <div className="flex items-center gap-1 mb-2">
+                      <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                      <span className="text-xs text-gray-600">{item.product.rating}</span>
+                    </div>
+                    <p className="text-lg font-bold text-green-600 mb-2">${item.product.price}</p>
+                    <div className="flex gap-2">
+                      <button className="flex-1 bg-green-600 text-white py-1 rounded text-sm hover:bg-green-700">
+                        Add to Cart
+                      </button>
+                      <button
+                        onClick={() => removeFromWishlist(item.product_id)}
+                        className="p-1 text-red-500 hover:bg-red-50 rounded"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
